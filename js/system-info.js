@@ -84,13 +84,13 @@ class SystemInfoCollector {
         if (match && match[1]) {
           if (match[1].includes(':')) {
             this.cachedData.ipv6 = match[1];
-            this.cachedData.ipv4 = 'не назначен / NAT';
+            this.cachedData.ipv4 = this.lang === 'ru' ? 'не назначен / NAT' : 'not assigned / NAT';
           } else {
             this.cachedData.ipv4 = match[1];
           }
         }
       } catch {
-        this.cachedData.ipv4 = 'недоступно';
+        this.cachedData.ipv4 = this.lang === 'ru' ? 'недоступно' : 'unavailable';
       }
     }
 
@@ -99,26 +99,27 @@ class SystemInfoCollector {
       if (res6.ok) {
         const data = await res6.json();
         this.cachedData.ipv6 = data.ip;
-      } else if (this.cachedData.ipv6 === 'определение...') {
-        this.cachedData.ipv6 = 'не поддерживается';
+      } else if (this.cachedData.ipv6 === 'определение...' || this.cachedData.ipv6 === 'detecting...') {
+        this.cachedData.ipv6 = this.lang === 'ru' ? 'не поддерживается' : 'not supported';
       }
     } catch {
-      if (this.cachedData.ipv6 === 'определение...') {
-        this.cachedData.ipv6 = 'не поддерживается';
+      if (this.cachedData.ipv6 === 'определение...' || this.cachedData.ipv6 === 'detecting...') {
+        this.cachedData.ipv6 = this.lang === 'ru' ? 'не поддерживается' : 'not supported';
       }
     }
   }
 
   getGPUInfo() {
+    const isRu = (this.lang === 'ru');
     try {
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      if (!gl) return { vendor: 'Не поддерживается WebGL', renderer: 'Стандартный драйвер' };
+      if (!gl) return { vendor: isRu ? 'Не поддерживается WebGL' : 'WebGL not supported', renderer: isRu ? 'Стандартный драйвер' : 'Standard driver' };
 
       const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
       if (debugInfo) {
-        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || 'Неизвестно';
-        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || 'Неизвестно';
+        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || (isRu ? 'Неизвестно' : 'Unknown');
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || (isRu ? 'Неизвестно' : 'Unknown');
         return { vendor, renderer };
       }
       return {
@@ -126,7 +127,7 @@ class SystemInfoCollector {
         renderer: gl.getParameter(gl.RENDERER) || 'Generic'
       };
     } catch {
-      return { vendor: 'Ошибка WebGL', renderer: 'Недоступно' };
+      return { vendor: isRu ? 'Ошибка WebGL' : 'WebGL error', renderer: isRu ? 'Недоступно' : 'Unavailable' };
     }
   }
 
@@ -200,7 +201,7 @@ class SystemInfoCollector {
   }
 
   detectBrowser(ua) {
-    let name = 'Браузер';
+    let name = (this.lang === 'ru') ? 'Браузер' : 'Browser';
     let icon = PixelIcons.browserUnknown;
 
     const isBrave = (navigator.brave && typeof navigator.brave.isBrave === 'function') || ua.includes('Brave');
@@ -254,7 +255,7 @@ class SystemInfoCollector {
     }
     if (ua.includes('iPhone') || ua.includes('iPad')) return 'iOS';
     if (ua.includes('Linux')) return 'Linux';
-    return navigator.platform || 'Неизвестно';
+    return navigator.platform || (this.lang === 'ru' ? 'Неизвестно' : 'Unknown');
   }
 
   getFullReport() {

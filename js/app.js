@@ -1,14 +1,4 @@
-/**
- * EtherTest Main Application Controller
- * - Сохранение темы в localStorage
- * - Поддержка темы "кастом" с выезжающей кнопкой шестерёнки [ ⚙ ]
- * - Экспорт / импорт темы в чистую строку вида `ETHERTHEME#...#END` (без спецсимволов)
- * - Полноценное Dev-меню для подмены значений на лету (UA, GPU, IP, скорость, фаза)
- * - Связка UI, тем, одометра/барабана цифр, спидометра и сетевого движка
- */
-
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Инициализация иконок интерфейса
   injectPixelIcon('logo-icon', PixelIcons.speedometer);
   injectPixelIcon('icon-network', PixelIcons.network);
   injectPixelIcon('icon-info', PixelIcons.info);
@@ -19,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
   injectPixelIcon('icon-terminal', PixelIcons.terminal);
   injectPixelIcon('icon-start', PixelIcons.start);
 
-  // 1.1 СЛОВАРЬ И ПЕРЕКЛЮЧЕНИЕ ЯЗЫКОВ (en / ru)
   const i18n = {
     en: {
       nav_speedtest: 'speedtest',
@@ -133,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Автодетекция языка браузера по умолчанию (если юзер еще не переключал вручную)
   let currentLang = 'en';
   try {
     const savedLang = localStorage.getItem('ethertest_lang');
@@ -163,12 +151,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const elementsToAnimate = Array.from(document.querySelectorAll('[data-i18n], #current-lang-text, #current-theme-name, #speed-unit, .info-item, .start-text, .metric-title, .val-sub'));
 
     if (animate) {
-      // Собираем элементы с переменной шириной в кнопках и карточках метрик
       const textContainers = Array.from(document.querySelectorAll('.nav-text, .start-text'));
       const metricInners = Array.from(document.querySelectorAll('.metric-inner'));
       const scalableBlocks = [...textContainers, ...metricInners];
 
-      // 1. Фиксируем текущие ширины на каждом блоке
       const oldWidths = new Map();
       scalableBlocks.forEach(el => {
         const w = el.getBoundingClientRect().width;
@@ -177,30 +163,24 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.width = `${w}px`;
       });
 
-      // 2. Растворяем старый текст
       elementsToAnimate.forEach(el => {
         el.classList.add('lang-trans-text', 'lang-fade-out');
       });
 
       setTimeout(() => {
-        // 3. Подменяем текст на новый язык
         applyLanguageTexts(newLang);
 
-        // 4. Замеряем целевую ширину с новым текстом (снимаем фиксацию ширины, меряем, возвращаем)
         const targetWidths = new Map();
         scalableBlocks.forEach(el => {
           el.style.transition = 'none';
           el.style.width = 'auto';
           const newW = el.getBoundingClientRect().width;
           targetWidths.set(el, newW);
-          // Возвращаем старую ширину перед анимацией
           el.style.width = `${oldWidths.get(el)}px`;
         });
 
-        // Форсируем перерисовку в браузере
         void document.body.offsetHeight;
 
-        // 5. Запускаем одновременную плавную анимацию ширины и проявление текста
         requestAnimationFrame(() => {
           scalableBlocks.forEach(el => {
             el.style.transition = 'width 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
@@ -212,7 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
             el.classList.add('lang-fade-in');
           });
 
-          // По окончании анимации (через 360мс) возвращаем auto ширину без рывка
           setTimeout(() => {
             scalableBlocks.forEach(el => {
               el.style.transition = '';
@@ -233,7 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentLangText) currentLangText.textContent = newLang;
     if (speedUnitEl) speedUnitEl.textContent = i18n[newLang].unit_speed;
 
-    // Обновляем все элементы с data-i18n
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
       if (i18n[newLang] && i18n[newLang][key]) {
@@ -241,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Обновляем текст темы
     if (currentThemeName) {
       const curThemeKey = themes[currentThemeIdx];
       currentThemeName.textContent = i18n[newLang].themes[curThemeKey] || curThemeKey;
@@ -259,19 +236,16 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch {}
   }
 
-  // 2. Инициализация компонентов
   const engine = new EtherTestEngine();
   const gauge = new PixelGauge('gauge-canvas');
   const sysInfo = new SystemInfoCollector();
   sysInfo.setLang(currentLang);
 
-  // Запуск сбора IP и системной информации
   sysInfo.fetchIPs().then(() => {
     sysInfo.renderToDOM('info-grid');
   });
   sysInfo.renderToDOM('info-grid');
 
-  // Таймер обновления времени на вкладке Инфо
   setInterval(() => {
     const timeEl = document.getElementById('info-val-time');
     if (timeEl) {
@@ -284,14 +258,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 1000);
 
-  // 3. УПРАВЛЕНИЕ ТЕМАМИ (pure-oled, dark, night, day, hacker, cyber, custom)
   const themes = ['pure-oled', 'dark', 'night', 'day', 'hacker', 'cyber', 'custom'];
 
   const themeBtn = document.getElementById('theme-btn');
   const currentThemeName = document.getElementById('current-theme-name');
   const gearBtn = document.getElementById('custom-theme-gear-btn');
 
-  // Дефолтный бирюзовый кибер-пресет (встаёт прямо перед кастомом и по дефолту в кастом)
   const defaultCyberPreset = {
     bg: '#050505',
     active: '#00ffcc',
@@ -303,10 +275,8 @@ document.addEventListener('DOMContentLoaded', () => {
     needle: '#00ffcc'
   };
 
-  // Значения кастомной темы по умолчанию (в точности совпадают с киберпанк, поэтому при переходе ничего не моргает)
   let customThemeConfig = Object.assign({}, defaultCyberPreset);
 
-  // Загрузка кастомной темы из хранилища
   try {
     const savedCustom = localStorage.getItem('ethertest_custom_theme');
     if (savedCustom) {
@@ -344,7 +314,6 @@ document.addEventListener('DOMContentLoaded', () => {
     root.style.removeProperty('--needle-color');
   }
 
-  // Применение темы
   function applyTheme(themeName, save = true) {
     document.documentElement.setAttribute('data-theme', themeName);
     const localizedTheme = (i18n[currentLang] && i18n[currentLang].themes && i18n[currentLang].themes[themeName]) || themeName;
@@ -352,12 +321,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (themeName === 'custom') {
       if (gearBtn.classList.contains('hidden')) {
-        // Устанавливаем положение сверху и прозрачность перед запуском перехода
         gearBtn.classList.add('entering');
         gearBtn.classList.remove('hidden');
-        // Форсируем reflow для срабатывания перехода
         void gearBtn.offsetWidth;
-        // Плавно спускаем вниз и делаем непрозрачным
         gearBtn.classList.remove('entering');
       }
       applyCustomThemeToCSS(customThemeConfig);
@@ -375,7 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Клик по переключателю языка [ 🌐 en ] <-> [ 🌐 ru ]
   if (langBtn) {
     langBtn.addEventListener('click', () => {
       const targetLang = (currentLang === 'en') ? 'ru' : 'en';
@@ -386,7 +351,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Инициализация сохраненной темы и языка
   let currentThemeIdx = 0;
   try {
     const savedTheme = localStorage.getItem('ethertest_theme');
@@ -397,13 +361,11 @@ document.addEventListener('DOMContentLoaded', () => {
   applyTheme(themes[currentThemeIdx], false);
   updateLanguage(currentLang);
 
-  // Клик по кнопке смены темы
   themeBtn.addEventListener('click', () => {
     currentThemeIdx = (currentThemeIdx + 1) % themes.length;
     applyTheme(themes[currentThemeIdx], true);
   });
 
-  // 4. МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ КАСТОМНОЙ ТЕМЫ И СЛОТЫ
   const customModal = document.getElementById('custom-theme-modal');
   const customModalClose = document.getElementById('custom-modal-close');
   const exportThemeBtn = document.getElementById('export-theme-btn');
@@ -426,7 +388,6 @@ document.addEventListener('DOMContentLoaded', () => {
     needle: document.getElementById('picker-needle')
   };
 
-  // --- ЛОКАЛЬНЫЕ СЛОТЫ ТЕМ ---
   let themeSlots = [];
   try {
     const savedSlots = localStorage.getItem('ethertest_theme_slots');
@@ -460,12 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderSlots() {
     if (!slotsListEl) return;
-    
-    // Вычисляем страницы
-    // Если слотов 0: 1 страница (1 слот "+ создать новую", 4 "пустой слот")
-    // Если все слоты заполнены на текущих страницах, следующая страница становится доступной
+
     const totalSlots = themeSlots.length;
-    // Количество страниц: минимум 1, либо пока есть слоты + если ровно кратно 5, то еще страница для следующей свободной
     const totalPages = Math.max(1, Math.ceil((totalSlots + 1) / SLOTS_PER_PAGE));
     if (slotsCurrentPage > totalPages) slotsCurrentPage = totalPages;
     if (slotsCurrentPage < 1) slotsCurrentPage = 1;
@@ -483,7 +440,6 @@ document.addEventListener('DOMContentLoaded', () => {
       slotItem.className = 'theme-slot-item';
 
       if (slotIndex < totalSlots) {
-        // Заполненный слот
         const slotData = themeSlots[slotIndex];
         const slotTitle = slotData.name || `${i18n[currentLang].slot_prefix}${slotIndex + 1}`;
         slotItem.innerHTML = `
@@ -504,7 +460,6 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         `;
 
-        // Кнопка Применить
         slotItem.querySelector('.btn-apply').addEventListener('click', (e) => {
           e.stopPropagation();
           customThemeConfig = Object.assign({}, slotData.config);
@@ -519,7 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(() => { themeIoStatus.textContent = ''; }, 2500);
         });
 
-        // Кнопка Скопировать код темы в буфер
         slotItem.querySelector('.btn-copy').addEventListener('click', (e) => {
           e.stopPropagation();
           const str = encodeThemeToString(slotData.config);
@@ -531,7 +485,6 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         });
 
-        // Кнопка Удалить слот
         slotItem.querySelector('.btn-delete').addEventListener('click', (e) => {
           e.stopPropagation();
           themeSlots.splice(slotIndex, 1);
@@ -542,7 +495,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
       } else if (slotIndex === totalSlots) {
-        // Следующий свободный слот: "+ создать новую"
         slotItem.classList.add('is-create');
         slotItem.innerHTML = `
           <div class="slot-left">
@@ -562,7 +514,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
       } else {
-        // Остальные свободные слоты: "пустой слот"
         slotItem.classList.add('is-empty');
         slotItem.innerHTML = `
           <div class="slot-left">
@@ -610,7 +561,6 @@ document.addEventListener('DOMContentLoaded', () => {
     customModal.classList.add('hidden');
   });
 
-  // Отслеживание изменений в колорпикерах
   for (const key in pickers) {
     pickers[key].addEventListener('input', (e) => {
       customThemeConfig[key] = e.target.value;
@@ -621,7 +571,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ЭКСПОРТ ТЕКУЩЕЙ ТЕМЫ В ЧИСТУЮ СТРОКУ С ЯСНЫМИ ГРАНИЦАМИ
   exportThemeBtn.addEventListener('click', () => {
     const themeString = encodeThemeToString(customThemeConfig);
     navigator.clipboard.writeText(themeString).then(() => {
@@ -632,7 +581,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // ИМПОРТ В ТЕКУЩУЮ ТЕМУ ИЗ БУФЕРА
   importThemeBtn.addEventListener('click', async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -672,7 +620,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 5. ДЕВ-МЕНЮ (ПОДМЕНА ЗНАЧЕНИЙ НА ЛЕТУ)
   const devBtn = document.getElementById('dev-menu-btn');
   const devModal = document.getElementById('dev-menu-modal');
   const devModalClose = document.getElementById('dev-modal-close');
@@ -688,15 +635,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const devInputSpeed = document.getElementById('dev-input-speed');
   const devSelectPhase = document.getElementById('dev-select-phase');
 
-  // Быстрые теги UA
   document.querySelectorAll('.dev-quick-tags .tag-btn').forEach(tag => {
     tag.addEventListener('click', () => {
       devInputUa.value = tag.getAttribute('data-ua');
     });
   });
 
-  // СЕКРЕТНЫЙ ХОТКЕЙ: Ctrl + Shift + Alt + l + o + x
-  // Отслеживаем зажатые клавиши
   const pressedKeys = new Set();
 
   window.addEventListener('keydown', (e) => {
@@ -727,7 +671,6 @@ document.addEventListener('DOMContentLoaded', () => {
     devModal.classList.add('hidden');
   });
 
-  // Применить подмену
   devApplyBtn.addEventListener('click', () => {
     if (devInputUa.value.trim()) {
       sysInfo.setDevOverride('ua', devInputUa.value.trim());
@@ -745,10 +688,8 @@ document.addEventListener('DOMContentLoaded', () => {
       sysInfo.setDevOverride('ipv6', devInputIpv6.value.trim());
     }
 
-    // Обновляем вкладку инфо
     sysInfo.renderToDOM('info-grid');
 
-    // Если задана тестовая скорость на спидометре
     if (devInputSpeed.value !== '') {
       const spd = parseFloat(devInputSpeed.value);
       const phase = devSelectPhase.value;
@@ -769,7 +710,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { devFeedback.textContent = ''; }, 2500);
   });
 
-  // Сброс подмены на реальные
   devResetBtn.addEventListener('click', () => {
     sysInfo.clearDevOverrides();
     devInputUa.value = '';
@@ -784,13 +724,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { devFeedback.textContent = ''; }, 2500);
   });
 
-  // Закрытие модалок по клику вне контента
   window.addEventListener('click', (e) => {
     if (e.target === customModal) customModal.classList.add('hidden');
     if (e.target === devModal) devModal.classList.add('hidden');
   });
 
-  // 6. ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
   const navButtons = document.querySelectorAll('.header-right .nav-btn[data-tab]');
   const tabPanes = document.querySelectorAll('.tab-pane');
 
@@ -814,7 +752,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 7. ОДОМЕТР: ЧЕТКОЕ ИЗМЕНЕНИЕ И ВЕРТИКАЛЬНАЯ ПРОКРУТКА ПРИ СМЕНЕ РАЗРЯДОВ
   const digitsWrapper = document.getElementById('digits-wrapper');
   const gaugeContainer = document.querySelector('.gauge-container');
   let currentLen = 0;
@@ -860,7 +797,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 8. UI ЭЛЕМЕНТЫ МЕТРИК
   const startBtn = document.getElementById('start-btn');
   const statusBar = document.getElementById('status-bar');
 
@@ -890,7 +826,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   resetUI();
 
-  // 9. СВЯЗЫВАНИЕ СОБЫТИЙ ДВИЖКА (ENGINE) И UI
   engine.on('start', () => {
     startBtn.classList.add('running');
     statusBar.textContent = i18n[currentLang].status_starting;
