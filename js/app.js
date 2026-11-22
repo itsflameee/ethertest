@@ -914,7 +914,9 @@ document.addEventListener('DOMContentLoaded', () => {
       gaugeContainer.classList.remove('testing');
       statusBar.textContent = i18n[currentLang].status_complete;
       
-      sysInfo.setLastSpeeds(engine.state.download.peakMbps, engine.state.upload.peakMbps);
+      const finalDown = engine.state.download.avgMbps ?? engine.state.download.currentMbps;
+      const finalUp = engine.state.upload.avgMbps ?? engine.state.upload.currentMbps;
+      sysInfo.setLastSpeeds(finalDown, finalUp);
     } else if (phase === 'idle' || phase === 'error') {
       startBtn.classList.remove('running');
       gaugeContainer.classList.remove('testing');
@@ -959,11 +961,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   engine.on('complete', (summary) => {
-    setMetricValue(dlValText, summary.download.peakMbps.toFixed(1));
-    setMetricValue(ulValText, summary.upload.peakMbps.toFixed(1));
+    const finalDown = (summary.download.avgMbps ?? summary.download.currentMbps).toFixed(1);
+    const finalUp = (summary.upload.avgMbps ?? summary.upload.currentMbps).toFixed(1);
+
+    setMetricValue(dlValText, finalDown);
+    setMetricValue(ulValText, finalUp);
     setMetricValue(pingValText, summary.ping.avg);
     gauge.setSpeed(0);
-    updateOdometer(summary.download.peakMbps.toFixed(1));
+    updateOdometer(finalDown);
   });
 
   startBtn.addEventListener('click', () => {

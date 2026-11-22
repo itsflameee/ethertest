@@ -49,11 +49,11 @@ class EtherTestEngine {
         'https://1.1.1.1/cdn-cgi/trace'
       ],
 
-      // Эндпоинты для отдачи (Upload)
+      // Эндпоинты для отдачи (Upload) с открытым CORS (*) и поддержкой высоких скоростей
       uploadTargets: [
         'https://speed.cloudflare.com/__up',
-        'https://httpbin.org/post',
-        'https://echo.free.beeceptor.com'
+        'https://icanhazip.com',
+        'https://ipv4.icanhazip.com'
       ]
     };
 
@@ -301,6 +301,8 @@ class EtherTestEngine {
 
     const workerPromises = Array.from({ length: numStreams }, (_, i) => workerStream(i));
 
+    let speedSamples = [];
+
     // Цикл расчета метрик каждые 100 мс
     while (performance.now() - testStartTime < durationMs) {
       if (this.abortController.signal.aborted) {
@@ -329,13 +331,23 @@ class EtherTestEngine {
       }
 
       const elapsed = now - testStartTime;
-      if (elapsed > slowStartDurationMs && smoothedMbps > peakMbps) {
-        peakMbps = smoothedMbps;
+      if (elapsed > slowStartDurationMs) {
+        speedSamples.push(smoothedMbps);
+        if (smoothedMbps > peakMbps) {
+          peakMbps = smoothedMbps;
+        }
       }
 
+      // Накопительное среднее по всем значениям с момента прогрева
+      const avgMbps = speedSamples.length > 0
+        ? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length
+        : smoothedMbps;
+
       this.state.download = {
-        currentMbps: Math.max(0, Math.round(smoothedMbps * 10) / 10),
+        currentMbps: Math.max(0, Math.round(avgMbps * 10) / 10),
+        avgMbps: Math.max(0, Math.round(avgMbps * 10) / 10),
         peakMbps: Math.round(peakMbps * 10) / 10,
+        instantMbps: Math.max(0, Math.round(smoothedMbps * 10) / 10),
         totalBytes: totalLoadedBytes,
         progress: Math.min(1, elapsed / durationMs)
       };
@@ -355,7 +367,7 @@ class EtherTestEngine {
    * С автоматическим выбором эндпоинта и защитой от падения в 0
    */
   async runUploadTest(durationMs = 8000) {
-    const numStreams = 4;
+    const numStreams = 10;
     const testStartTime = performance.now();
     let totalUploadedBytes = 0;
     let lastUploadedBytes = 0;
@@ -365,43 +377,50 @@ class EtherTestEngine {
     let peakMbps = 0;
     const slowStartDurationMs = 600;
 
-    const bufferSize = 1024 * 1024; // 1 MB
+    // 2.5 MB чанк для полной утилизации TCP-окна на гигабитных скоростях
+    const bufferSize = 2.5 * 1024 * 1024;
     const chunkData = new Uint8Array(bufferSize);
-    for (let i = 0; i < bufferSize; i += 1024) {
+    for (let i = 0; i < bufferSize; i += 4096) {
       chunkData[i] = (Math.random() * 255) | 0;
     }
 
     let isRunning = true;
-    let activeUploadTarget = this.useCloudflare ? this.endpoints.uploadTargets[0] : this.endpoints.uploadTargets[1];
+    const targets = this.endpoints.uploadTargets;
 
-    const uploadWorker = async () => {
+    const uploadWorker = async (workerId) => {
+      let targetIdx = this.useCloudflare ? 0 : 1;
+
       while (isRunning && !this.abortController.signal.aborted) {
+        const currentTarget = targets[targetIdx % targets.length];
         try {
           const tReqStart = performance.now();
-          const res = await fetch(activeUploadTarget, {
+          const res = await fetch(`${currentTarget}?w=${workerId}&ts=${Date.now()}`, {
             method: 'POST',
             mode: 'cors',
+            cache: 'no-store',
             body: chunkData,
             signal: this.abortController.signal
           });
 
           const tReqEnd = performance.now();
-          if (tReqEnd - tReqStart > 0) {
+          if (res.ok && tReqEnd - tReqStart > 0) {
             totalUploadedBytes += bufferSize;
+          } else {
+            targetIdx++;
+            await new Promise(r => setTimeout(r, 40));
           }
         } catch (e) {
           if (e.name === 'AbortError') throw e;
-
-          // Если Cloudflare Upload блокируется, переключаемся на резервный зеркальный эндпоинт
-          if (activeUploadTarget === this.endpoints.uploadTargets[0]) {
-            activeUploadTarget = this.endpoints.uploadTargets[1];
-          }
-          await new Promise(r => setTimeout(r, 80));
+          // Ротация эндпоинта при ошибке
+          targetIdx++;
+          await new Promise(r => setTimeout(r, 40));
         }
       }
     };
 
-    const workerPromises = Array.from({ length: numStreams }, () => uploadWorker());
+    const workerPromises = Array.from({ length: numStreams }, (_, i) => uploadWorker(i));
+
+    let speedSamples = [];
 
     while (performance.now() - testStartTime < durationMs) {
       if (this.abortController.signal.aborted) {
@@ -428,13 +447,23 @@ class EtherTestEngine {
       }
 
       const elapsed = now - testStartTime;
-      if (elapsed > slowStartDurationMs && smoothedMbps > peakMbps) {
-        peakMbps = smoothedMbps;
+      if (elapsed > slowStartDurationMs) {
+        speedSamples.push(smoothedMbps);
+        if (smoothedMbps > peakMbps) {
+          peakMbps = smoothedMbps;
+        }
       }
 
+      // Накопительное среднее по всем значениям с момента прогрева
+      const avgMbps = speedSamples.length > 0
+        ? speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length
+        : smoothedMbps;
+
       this.state.upload = {
-        currentMbps: Math.max(0, Math.round(smoothedMbps * 10) / 10),
+        currentMbps: Math.max(0, Math.round(avgMbps * 10) / 10),
+        avgMbps: Math.max(0, Math.round(avgMbps * 10) / 10),
         peakMbps: Math.round(peakMbps * 10) / 10,
+        instantMbps: Math.max(0, Math.round(smoothedMbps * 10) / 10),
         totalBytes: totalUploadedBytes,
         progress: Math.min(1, elapsed / durationMs)
       };
