@@ -23,8 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const i18n = {
     en: {
       nav_speedtest: 'speedtest',
-      nav_info: 'sysinfo',
-      nav_github: 'github',
+      nav_info: 'information',
+      nav_github: 'view on github',
       theme_label: 'theme',
       unit_speed: 'Mbps',
       metric_download: 'download',
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
     ru: {
-      nav_speedtest: 'тест скорости',
+      nav_speedtest: 'спидтест',
       nav_info: 'информация',
       nav_github: 'мы на github',
       theme_label: 'тема',
