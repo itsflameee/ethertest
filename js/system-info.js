@@ -14,9 +14,10 @@
 
 class SystemInfoCollector {
   constructor() {
+    this.lang = 'en';
     this.cachedData = {
-      ipv4: 'определение...',
-      ipv6: 'определение...',
+      ipv4: 'detecting...',
+      ipv6: 'detecting...',
       lastDownload: '- - -',
       lastUpload: '- - -'
     };
@@ -32,6 +33,16 @@ class SystemInfoCollector {
       os: null,
       timezone: null
     };
+  }
+
+  setLang(lang) {
+    this.lang = lang;
+    if (this.cachedData.ipv4 === 'detecting...' || this.cachedData.ipv4 === 'определение...') {
+      this.cachedData.ipv4 = lang === 'ru' ? 'определение...' : 'detecting...';
+    }
+    if (this.cachedData.ipv6 === 'detecting...' || this.cachedData.ipv6 === 'определение...') {
+      this.cachedData.ipv6 = lang === 'ru' ? 'определение...' : 'detecting...';
+    }
   }
 
   setDevOverride(key, val) {
@@ -53,8 +64,9 @@ class SystemInfoCollector {
   }
 
   setLastSpeeds(down, up) {
-    this.cachedData.lastDownload = down ? `${down} мбит/с` : '- - -';
-    this.cachedData.lastUpload = up ? `${up} мбит/с` : '- - -';
+    const unit = this.lang === 'ru' ? 'мбит/с' : 'Mbps';
+    this.cachedData.lastDownload = down ? `${down} ${unit}` : '- - -';
+    this.cachedData.lastUpload = up ? `${up} ${unit}` : '- - -';
   }
 
   async fetchIPs() {
@@ -246,6 +258,8 @@ class SystemInfoCollector {
   }
 
   getFullReport() {
+    const isRu = (this.lang === 'ru');
+    const locale = isRu ? 'ru-RU' : 'en-US';
     const now = new Date();
     const ua = this.devOverrides.ua || navigator.userAgent;
     const realGpu = this.getGPUInfo();
@@ -255,13 +269,13 @@ class SystemInfoCollector {
     const browserInfo = this.detectBrowser(ua);
     const gpuIcon = this.detectGpuVendorIcon(gpuVendor, gpuRenderer);
 
-    const dateStr = now.toLocaleDateString('ru-RU', {
+    const dateStr = now.toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       weekday: 'short'
     });
-    const timeStr = now.toLocaleTimeString('ru-RU', {
+    const timeStr = now.toLocaleTimeString(locale, {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
@@ -272,19 +286,47 @@ class SystemInfoCollector {
     const ipv6Val = this.devOverrides.ipv6 || this.cachedData.ipv6;
     const osVal = this.devOverrides.os || this.getOS(ua);
 
+    const labels = isRu ? {
+      date: 'дата',
+      time: 'время',
+      timezone: 'часовой пояс',
+      ipv4: 'ipv4 адрес',
+      ipv6: 'ipv6 адрес',
+      down_speed: 'входящая скорость',
+      up_speed: 'исходящая скорость',
+      browser: 'браузер',
+      os: 'операционная система',
+      gpu_vendor: 'gpu вендор',
+      gpu_renderer: 'gpu рендерер',
+      user_agent: 'userAgent'
+    } : {
+      date: 'date',
+      time: 'time',
+      timezone: 'timezone',
+      ipv4: 'ipv4 address',
+      ipv6: 'ipv6 address',
+      down_speed: 'download speed',
+      up_speed: 'upload speed',
+      browser: 'browser',
+      os: 'operating system',
+      gpu_vendor: 'gpu vendor',
+      gpu_renderer: 'gpu renderer',
+      user_agent: 'userAgent'
+    };
+
     return [
-      { id: 'date', icon: PixelIcons.calendar, label: 'дата', value: dateStr },
-      { id: 'time', icon: PixelIcons.clock, label: 'время', value: timeStr },
-      { id: 'timezone', icon: PixelIcons.globe, label: 'часовой пояс', value: timeZone },
-      { id: 'ipv4', icon: PixelIcons.ip, label: 'ipv4 адрес', value: ipv4Val },
-      { id: 'ipv6', icon: PixelIcons.ip, label: 'ipv6 адрес', value: ipv6Val },
-      { id: 'down_speed', icon: PixelIcons.speedDown, label: 'входящая скорость', value: this.cachedData.lastDownload },
-      { id: 'up_speed', icon: PixelIcons.speedUp, label: 'исходящая скорость', value: this.cachedData.lastUpload },
-      { id: 'browser', icon: browserInfo.icon, label: 'браузер', value: browserInfo.name },
-      { id: 'os', icon: PixelIcons.os, label: 'операционная система', value: osVal },
-      { id: 'gpu_vendor', icon: gpuIcon, label: 'gpu вендор', value: gpuVendor },
-      { id: 'gpu_renderer', icon: PixelIcons.gpuRenderer, label: 'gpu рендерер', value: gpuRenderer },
-      { id: 'user_agent', icon: PixelIcons.userAgent, label: 'userAgent', value: ua }
+      { id: 'date', icon: PixelIcons.calendar, label: labels.date, value: dateStr },
+      { id: 'time', icon: PixelIcons.clock, label: labels.time, value: timeStr },
+      { id: 'timezone', icon: PixelIcons.globe, label: labels.timezone, value: timeZone },
+      { id: 'ipv4', icon: PixelIcons.ip, label: labels.ipv4, value: ipv4Val },
+      { id: 'ipv6', icon: PixelIcons.ip, label: labels.ipv6, value: ipv6Val },
+      { id: 'down_speed', icon: PixelIcons.speedDown, label: labels.down_speed, value: this.cachedData.lastDownload },
+      { id: 'up_speed', icon: PixelIcons.speedUp, label: labels.up_speed, value: this.cachedData.lastUpload },
+      { id: 'browser', icon: browserInfo.icon, label: labels.browser, value: browserInfo.name },
+      { id: 'os', icon: PixelIcons.os, label: labels.os, value: osVal },
+      { id: 'gpu_vendor', icon: gpuIcon, label: labels.gpu_vendor, value: gpuVendor },
+      { id: 'gpu_renderer', icon: PixelIcons.gpuRenderer, label: labels.gpu_renderer, value: gpuRenderer },
+      { id: 'user_agent', icon: PixelIcons.userAgent, label: labels.user_agent, value: ua }
     ];
   }
 

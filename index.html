@@ -24,29 +24,35 @@
         <button class="nav-btn active" data-tab="speedtest">
           <span class="bracket">[</span>
           <span class="pixel-icon" id="icon-network"></span>
-          <span class="nav-text">тест скорости</span>
+          <span class="nav-text" data-i18n="nav_speedtest">speedtest</span>
           <span class="bracket">]</span>
         </button>
         <button class="nav-btn" data-tab="info">
           <span class="bracket">[</span>
           <span class="pixel-icon" id="icon-info"></span>
-          <span class="nav-text">информация</span>
+          <span class="nav-text" data-i18n="nav_info">sysinfo</span>
           <span class="bracket">]</span>
         </button>
         <a class="nav-btn" id="github-link" href="https://github.com/itsflameee/ethertest" target="_blank" rel="noopener noreferrer">
           <span class="bracket">[</span>
           <span class="pixel-icon" id="icon-github"></span>
-          <span class="nav-text">мы на github</span>
+          <span class="nav-text" data-i18n="nav_github">github</span>
           <span class="bracket">]</span>
         </a>
-        <button class="nav-btn theme-switcher" id="theme-btn" title="Сменить тему">
+        <button class="nav-btn lang-switcher" id="lang-btn" title="Switch language">
+          <span class="bracket">[</span>
+          <span class="pixel-icon" id="icon-lang"></span>
+          <span class="nav-text" id="current-lang-text">en</span>
+          <span class="bracket">]</span>
+        </button>
+        <button class="nav-btn theme-switcher" id="theme-btn" title="Change theme">
           <span class="bracket">[</span>
           <span class="pixel-icon" id="icon-theme"></span>
-          <span class="nav-text">тема: <span id="current-theme-name">pure oled</span></span>
+          <span class="nav-text"><span data-i18n="theme_label">theme</span>: <span id="current-theme-name">pure oled</span></span>
           <span class="bracket">]</span>
         </button>
         <!-- Кнопка выезжающей кастомной темы (шестерёнка) -->
-        <button class="nav-btn custom-gear-btn hidden" id="custom-theme-gear-btn" title="Настройки кастомной темы">
+        <button class="nav-btn custom-gear-btn hidden" id="custom-theme-gear-btn" title="Custom theme settings">
           <span class="bracket">[</span>
           <span class="pixel-icon" id="icon-gear"></span>
           <span class="bracket">]</span>
@@ -70,7 +76,7 @@
                   <span class="dash-placeholder">- - -</span>
                 </div>
               </div>
-              <div class="speed-unit" id="speed-unit">мбит/с</div>
+              <div class="speed-unit" id="speed-unit">Mbps</div>
             </div>
           </div>
 
@@ -80,8 +86,8 @@
             <div class="metric-box" id="metric-download">
               <span class="bracket-large">[</span>
               <div class="metric-inner">
-                <div class="metric-title">загрузка</div>
-                <div class="metric-value"><span class="val-text">- - -</span> <span class="val-sub">мбит/с</span></div>
+                <div class="metric-title" data-i18n="metric_download">download</div>
+                <div class="metric-value"><span class="val-text">- - -</span> <span class="val-sub" data-i18n="unit_mbps">Mbps</span></div>
               </div>
               <span class="bracket-large">]</span>
             </div>
@@ -90,8 +96,8 @@
             <div class="metric-box" id="metric-upload">
               <span class="bracket-large">[</span>
               <div class="metric-inner">
-                <div class="metric-title">отдача</div>
-                <div class="metric-value"><span class="val-text">- - -</span> <span class="val-sub">мбит/с</span></div>
+                <div class="metric-title" data-i18n="metric_upload">upload</div>
+                <div class="metric-value"><span class="val-text">- - -</span> <span class="val-sub" data-i18n="unit_mbps">Mbps</span></div>
               </div>
               <span class="bracket-large">]</span>
             </div>
@@ -100,8 +106,8 @@
             <div class="metric-box" id="metric-ping">
               <span class="bracket-large">[</span>
               <div class="metric-inner">
-                <div class="metric-title">пинг</div>
-                <div class="metric-value"><span class="val-text">- - -</span> <span class="val-sub">мс</span></div>
+                <div class="metric-title" data-i18n="metric_ping">ping</div>
+                <div class="metric-value"><span class="val-text">- - -</span> <span class="val-sub" data-i18n="unit_ms">ms</span></div>
               </div>
               <span class="bracket-large">]</span>
             </div>
@@ -112,14 +118,14 @@
             <button class="start-btn" id="start-btn">
               <span class="bracket-btn">[</span>
               <span class="pixel-icon" id="icon-start"></span>
-              <span class="start-text">старт</span>
+              <span class="start-text" data-i18n="btn_start">start</span>
               <span class="bracket-btn">]</span>
             </button>
           </div>
 
           <!-- Строка статуса -->
-          <div class="status-bar" id="status-bar">
-            готов к запуску
+          <div class="status-bar" id="status-bar" data-i18n="status_ready">
+            ready to start
           </div>
         </div>
       </section>
@@ -128,7 +134,7 @@
       <section class="tab-pane" id="tab-info">
         <div class="info-wrapper">
           <div class="info-header">
-            <span class="info-title"># техническая информация системы и сети</span>
+            <span class="info-title" data-i18n="info_title"># system & network technical specs</span>
           </div>
           <div class="info-grid" id="info-grid">
             <!-- Элементы генерируются скриптом js/system-info.js -->
@@ -141,41 +147,41 @@
     <div class="modal-overlay hidden" id="custom-theme-modal">
       <div class="tui-modal">
         <div class="modal-header">
-          <span class="modal-title"># [ настройки темы: кастом ]</span>
+          <span class="modal-title" data-i18n="modal_theme_title"># [ theme settings: custom ]</span>
           <button class="modal-close-btn" id="custom-modal-close">[ x ]</button>
         </div>
         <div class="modal-body">
           <div class="color-picker-grid">
             <div class="picker-row">
-              <span class="picker-label">фон страницы:</span>
+              <span class="picker-label" data-i18n="picker_bg">background:</span>
               <input type="color" id="picker-bg" value="#050505">
             </div>
             <div class="picker-row">
-              <span class="picker-label">активный текст / кнопки:</span>
+              <span class="picker-label" data-i18n="picker_active">active text / buttons:</span>
               <input type="color" id="picker-active" value="#ffffff">
             </div>
             <div class="picker-row">
-              <span class="picker-label">неактивный текст / плейсхолдеры:</span>
+              <span class="picker-label" data-i18n="picker_inactive">inactive text / labels:</span>
               <input type="color" id="picker-inactive" value="#777777">
             </div>
             <div class="picker-row">
-              <span class="picker-label">скобки [ ... ]:</span>
+              <span class="picker-label" data-i18n="picker_bracket">brackets [ ... ]:</span>
               <input type="color" id="picker-bracket" value="#ffffff">
             </div>
             <div class="picker-row">
-              <span class="picker-label">сегменты спидометра (фон):</span>
+              <span class="picker-label" data-i18n="picker_gauge_bg">gauge segments (bg):</span>
               <input type="color" id="picker-gauge-bg" value="#2a2a2a">
             </div>
             <div class="picker-row">
-              <span class="picker-label">дыхание загрузки (download):</span>
+              <span class="picker-label" data-i18n="picker_dl_pulse">download wave pulse:</span>
               <input type="color" id="picker-dl-pulse" value="#cceeff">
             </div>
             <div class="picker-row">
-              <span class="picker-label">дыхание отдачи (upload):</span>
+              <span class="picker-label" data-i18n="picker_ul_pulse">upload wave pulse:</span>
               <input type="color" id="picker-ul-pulse" value="#f6c6f6">
             </div>
             <div class="picker-row">
-              <span class="picker-label">стрелка спидометра:</span>
+              <span class="picker-label" data-i18n="picker_needle">speedometer needle:</span>
               <input type="color" id="picker-needle" value="#ffffff">
             </div>
           </div>
@@ -183,11 +189,11 @@
           <!-- ЛОКАЛЬНЫЕ СЛОТЫ ТЕМ (по 5 на страницу) -->
           <div class="theme-slots-section">
             <div class="slots-header">
-              <span class="slots-title"># сохраненные слоты:</span>
+              <span class="slots-title" data-i18n="slots_saved_title"># saved slots:</span>
               <div class="slots-nav">
-                <button class="slots-page-btn" id="slots-prev-btn" title="Предыдущая страница">&lt;</button>
+                <button class="slots-page-btn" id="slots-prev-btn" title="Previous page">&lt;</button>
                 <span class="slots-page-info" id="slots-page-info">1/1</span>
-                <button class="slots-page-btn" id="slots-next-btn" title="Следующая страница">&gt;</button>
+                <button class="slots-page-btn" id="slots-next-btn" title="Next page">&gt;</button>
               </div>
             </div>
             <div class="theme-slots-list" id="theme-slots-list">
@@ -196,8 +202,8 @@
           </div>
 
           <div class="theme-io-actions">
-            <button class="tui-btn" id="export-theme-btn">[ скопировать код темы для кента ]</button>
-            <button class="tui-btn" id="import-theme-btn">[ вставить тему из буфера ]</button>
+            <button class="tui-btn" id="export-theme-btn" data-i18n="btn_export_theme">[ copy theme code for friend ]</button>
+            <button class="tui-btn" id="import-theme-btn" data-i18n="btn_import_theme">[ import theme from clipboard ]</button>
           </div>
           <div class="modal-feedback" id="theme-io-status"></div>
         </div>

@@ -13,15 +13,257 @@ document.addEventListener('DOMContentLoaded', () => {
   injectPixelIcon('icon-network', PixelIcons.network);
   injectPixelIcon('icon-info', PixelIcons.info);
   injectPixelIcon('icon-github', PixelIcons.github);
+  injectPixelIcon('icon-lang', PixelIcons.globe);
   injectPixelIcon('icon-theme', PixelIcons.theme);
   injectPixelIcon('icon-gear', PixelIcons.gear);
   injectPixelIcon('icon-terminal', PixelIcons.terminal);
   injectPixelIcon('icon-start', PixelIcons.start);
 
+  // 1.1 СЛОВАРЬ И ПЕРЕКЛЮЧЕНИЕ ЯЗЫКОВ (en / ru)
+  const i18n = {
+    en: {
+      nav_speedtest: 'speedtest',
+      nav_info: 'sysinfo',
+      nav_github: 'github',
+      theme_label: 'theme',
+      unit_speed: 'Mbps',
+      metric_download: 'download',
+      metric_upload: 'upload',
+      metric_ping: 'ping',
+      unit_mbps: 'Mbps',
+      unit_ms: 'ms',
+      btn_start: 'start',
+      status_ready: 'ready to start',
+      status_starting: 'initiating network test...',
+      status_ping: 'measuring latency & jitter (RFC 3550)...',
+      status_dl: 'testing incoming bandwidth (download)...',
+      status_ul: 'testing outgoing bandwidth (upload)...',
+      status_complete: 'network test completed successfully',
+      status_error: 'error during speedtest measurement',
+      info_title: '# system & network technical specs',
+      modal_theme_title: '# [ theme settings: custom ]',
+      picker_bg: 'background:',
+      picker_active: 'active text / buttons:',
+      picker_inactive: 'inactive text / labels:',
+      picker_bracket: 'brackets [ ... ]:',
+      picker_gauge_bg: 'gauge segments (bg):',
+      picker_dl_pulse: 'download wave pulse:',
+      picker_ul_pulse: 'upload wave pulse:',
+      picker_needle: 'speedometer needle:',
+      slots_saved_title: '# saved slots:',
+      btn_export_theme: '[ copy theme code for friend ]',
+      btn_import_theme: '[ import theme from clipboard ]',
+      copied_to_clipboard: 'copied to clipboard!',
+      import_clipboard_error: 'allow clipboard access to paste',
+      err_invalid_theme: 'error: invalid theme string',
+      err_incomplete_theme: 'error: incomplete theme parameters',
+      theme_imported: 'theme successfully imported!',
+      slot_prefix: 'slot #',
+      create_new: '+ create new',
+      empty_slot: 'empty slot',
+      slot_theme_default_name: 'theme #',
+      theme_applied: 'theme applied!',
+      slot_code_copied: 'slot code copied to clipboard!',
+      slot_deleted: 'slot deleted',
+      slot_created: 'created slot with current colors!',
+      themes: {
+        'pure-oled': 'pure oled',
+        'dark': 'dark',
+        'night': 'night',
+        'day': 'day',
+        'hacker': 'hacker',
+        'cyber': 'cyberpunk',
+        'custom': 'custom'
+      }
+    },
+    ru: {
+      nav_speedtest: 'тест скорости',
+      nav_info: 'информация',
+      nav_github: 'мы на github',
+      theme_label: 'тема',
+      unit_speed: 'мбит/с',
+      metric_download: 'загрузка',
+      metric_upload: 'отдача',
+      metric_ping: 'пинг',
+      unit_mbps: 'мбит/с',
+      unit_ms: 'мс',
+      btn_start: 'старт',
+      status_ready: 'готов к запуску',
+      status_starting: 'запуск тестирования сети...',
+      status_ping: 'замер задержки и джиттера (latency & jitter)...',
+      status_dl: 'тестирование входящего канала (download)...',
+      status_ul: 'тестирование исходящего канала (upload)...',
+      status_complete: 'тестирование успешно завершено',
+      status_error: 'ошибка во время замера',
+      info_title: '# техническая информация системы и сети',
+      modal_theme_title: '# [ настройки темы: кастом ]',
+      picker_bg: 'фон страницы:',
+      picker_active: 'активный текст / кнопки:',
+      picker_inactive: 'неактивный текст / плейсхолдеры:',
+      picker_bracket: 'скобки [ ... ]:',
+      picker_gauge_bg: 'сегменты спидометра (фон):',
+      picker_dl_pulse: 'дыхание загрузки (download):',
+      picker_ul_pulse: 'дыхание отдачи (upload):',
+      picker_needle: 'стрелка спидометра:',
+      slots_saved_title: '# сохраненные слоты:',
+      btn_export_theme: '[ скопировать код темы для кента ]',
+      btn_import_theme: '[ вставить тему из буфера ]',
+      copied_to_clipboard: 'скопировано в буфер обмена!',
+      import_clipboard_error: 'разрешите доступ к буферу обмена для вставки',
+      err_invalid_theme: 'ошибка: некорректная строка темы',
+      err_incomplete_theme: 'ошибка: неполные параметры темы',
+      theme_imported: 'тема успешно импортирована!',
+      slot_prefix: 'слот #',
+      create_new: '+ создать новую',
+      empty_slot: 'пустой слот',
+      slot_theme_default_name: 'тема #',
+      theme_applied: 'тема применена!',
+      slot_code_copied: 'код слота скопирован в буфер!',
+      slot_deleted: 'слот удален',
+      slot_created: 'создан слот с текущими цветами!',
+      themes: {
+        'pure-oled': 'pure oled',
+        'dark': 'dark',
+        'night': 'night',
+        'day': 'day',
+        'hacker': 'хацкер',
+        'cyber': 'киберпанк',
+        'custom': 'кастом'
+      }
+    }
+  };
+
+  // Автодетекция языка браузера по умолчанию (если юзер еще не переключал вручную)
+  let currentLang = 'en';
+  try {
+    const savedLang = localStorage.getItem('ethertest_lang');
+    if (savedLang === 'ru' || savedLang === 'en') {
+      currentLang = savedLang;
+    } else {
+      const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+      if (browserLang.startsWith('ru') || browserLang.startsWith('be') || browserLang.startsWith('kk') || browserLang.startsWith('uk')) {
+        currentLang = 'ru';
+      } else {
+        currentLang = 'en';
+      }
+    }
+  } catch {}
+
+  const langBtn = document.getElementById('lang-btn');
+  const currentLangText = document.getElementById('current-lang-text');
+  const speedUnitEl = document.getElementById('speed-unit');
+
+  function updateLanguage(newLang, animate = false) {
+    currentLang = newLang;
+    try {
+      localStorage.setItem('ethertest_lang', newLang);
+    } catch {}
+
+    document.documentElement.lang = newLang;
+    const elementsToAnimate = Array.from(document.querySelectorAll('[data-i18n], #current-lang-text, #current-theme-name, #speed-unit, .info-item, .start-text, .metric-title, .val-sub'));
+
+    if (animate) {
+      // Собираем элементы с переменной шириной в кнопках и карточках метрик
+      const textContainers = Array.from(document.querySelectorAll('.nav-text, .start-text'));
+      const metricInners = Array.from(document.querySelectorAll('.metric-inner'));
+      const scalableBlocks = [...textContainers, ...metricInners];
+
+      // 1. Фиксируем текущие ширины на каждом блоке
+      const oldWidths = new Map();
+      scalableBlocks.forEach(el => {
+        const w = el.getBoundingClientRect().width;
+        oldWidths.set(el, w);
+        el.style.transition = 'none';
+        el.style.width = `${w}px`;
+      });
+
+      // 2. Растворяем старый текст
+      elementsToAnimate.forEach(el => {
+        el.classList.add('lang-trans-text', 'lang-fade-out');
+      });
+
+      setTimeout(() => {
+        // 3. Подменяем текст на новый язык
+        applyLanguageTexts(newLang);
+
+        // 4. Замеряем целевую ширину с новым текстом (снимаем фиксацию ширины, меряем, возвращаем)
+        const targetWidths = new Map();
+        scalableBlocks.forEach(el => {
+          el.style.transition = 'none';
+          el.style.width = 'auto';
+          const newW = el.getBoundingClientRect().width;
+          targetWidths.set(el, newW);
+          // Возвращаем старую ширину перед анимацией
+          el.style.width = `${oldWidths.get(el)}px`;
+        });
+
+        // Форсируем перерисовку в браузере
+        void document.body.offsetHeight;
+
+        // 5. Запускаем одновременную плавную анимацию ширины и проявление текста
+        requestAnimationFrame(() => {
+          scalableBlocks.forEach(el => {
+            el.style.transition = 'width 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+            el.style.width = `${targetWidths.get(el)}px`;
+          });
+
+          elementsToAnimate.forEach(el => {
+            el.classList.remove('lang-fade-out');
+            el.classList.add('lang-fade-in');
+          });
+
+          // По окончании анимации (через 360мс) возвращаем auto ширину без рывка
+          setTimeout(() => {
+            scalableBlocks.forEach(el => {
+              el.style.transition = '';
+              el.style.width = '';
+            });
+            elementsToAnimate.forEach(el => {
+              el.classList.remove('lang-fade-in', 'lang-trans-text');
+            });
+          }, 360);
+        });
+      }, 150);
+    } else {
+      applyLanguageTexts(newLang);
+    }
+  }
+
+  function applyLanguageTexts(newLang) {
+    if (currentLangText) currentLangText.textContent = newLang;
+    if (speedUnitEl) speedUnitEl.textContent = i18n[newLang].unit_speed;
+
+    // Обновляем все элементы с data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (i18n[newLang] && i18n[newLang][key]) {
+        el.textContent = i18n[newLang][key];
+      }
+    });
+
+    // Обновляем текст темы
+    if (currentThemeName) {
+      const curThemeKey = themes[currentThemeIdx];
+      currentThemeName.textContent = i18n[newLang].themes[curThemeKey] || curThemeKey;
+    }
+
+    if (sysInfo) {
+      sysInfo.setLang(newLang);
+      sysInfo.renderToDOM('info-grid');
+    }
+
+    try {
+      if (typeof slotsListEl !== 'undefined' && slotsListEl && typeof renderSlots === 'function') {
+        renderSlots();
+      }
+    } catch {}
+  }
+
   // 2. Инициализация компонентов
   const engine = new EtherTestEngine();
   const gauge = new PixelGauge('gauge-canvas');
   const sysInfo = new SystemInfoCollector();
+  sysInfo.setLang(currentLang);
 
   // Запуск сбора IP и системной информации
   sysInfo.fetchIPs().then(() => {
@@ -34,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const timeEl = document.getElementById('info-val-time');
     if (timeEl) {
       const now = new Date();
-      timeEl.textContent = now.toLocaleTimeString('ru-RU', {
+      timeEl.textContent = now.toLocaleTimeString(currentLang === 'ru' ? 'ru-RU' : 'en-US', {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit'
@@ -44,15 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. УПРАВЛЕНИЕ ТЕМАМИ (pure-oled, dark, night, day, hacker, cyber, custom)
   const themes = ['pure-oled', 'dark', 'night', 'day', 'hacker', 'cyber', 'custom'];
-  const themeLabels = {
-    'pure-oled': 'pure oled',
-    'dark': 'dark',
-    'night': 'night',
-    'day': 'day',
-    'hacker': 'хацкер',
-    'cyber': 'киберпанк',
-    'custom': 'кастом'
-  };
 
   const themeBtn = document.getElementById('theme-btn');
   const currentThemeName = document.getElementById('current-theme-name');
@@ -114,7 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Применение темы
   function applyTheme(themeName, save = true) {
     document.documentElement.setAttribute('data-theme', themeName);
-    currentThemeName.textContent = themeLabels[themeName] || themeName;
+    const localizedTheme = (i18n[currentLang] && i18n[currentLang].themes && i18n[currentLang].themes[themeName]) || themeName;
+    currentThemeName.textContent = localizedTheme;
 
     if (themeName === 'custom') {
       if (gearBtn.classList.contains('hidden')) {
@@ -141,7 +375,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Инициализация сохраненной темы
+  // Клик по переключателю языка [ 🌐 en ] <-> [ 🌐 ru ]
+  if (langBtn) {
+    langBtn.addEventListener('click', () => {
+      const targetLang = (currentLang === 'en') ? 'ru' : 'en';
+      updateLanguage(targetLang, true);
+      if (engine.status === 'idle') {
+        statusBar.textContent = i18n[targetLang].status_ready;
+      }
+    });
+  }
+
+  // Инициализация сохраненной темы и языка
   let currentThemeIdx = 0;
   try {
     const savedTheme = localStorage.getItem('ethertest_theme');
@@ -150,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch {}
   applyTheme(themes[currentThemeIdx], false);
+  updateLanguage(currentLang);
 
   // Клик по кнопке смены темы
   themeBtn.addEventListener('click', () => {
@@ -239,19 +485,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (slotIndex < totalSlots) {
         // Заполненный слот
         const slotData = themeSlots[slotIndex];
+        const slotTitle = slotData.name || `${i18n[currentLang].slot_prefix}${slotIndex + 1}`;
         slotItem.innerHTML = `
           <div class="slot-left">
             <span class="slot-color-preview" style="background-color: ${slotData.config.bg}; border-color: ${slotData.config.active}"></span>
-            <span class="slot-name">${slotData.name || `слот #${slotIndex + 1}`}</span>
+            <span class="slot-name">${slotTitle}</span>
           </div>
           <div class="slot-actions">
-            <button class="slot-action-btn btn-apply" title="Применить тему">
+            <button class="slot-action-btn btn-apply" title="Apply theme">
               <span class="pixel-icon">${PixelIcons.check}</span>
             </button>
-            <button class="slot-action-btn btn-copy" title="Скопировать в буфер обмена">
+            <button class="slot-action-btn btn-copy" title="Copy to clipboard">
               <span class="pixel-icon">${PixelIcons.copy}</span>
             </button>
-            <button class="slot-action-btn btn-delete" title="Удалить тему">
+            <button class="slot-action-btn btn-delete" title="Delete slot">
               <span class="pixel-icon">${PixelIcons.trash}</span>
             </button>
           </div>
@@ -268,7 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } catch {}
           applyTheme('custom', true);
           currentThemeIdx = themes.indexOf('custom');
-          themeIoStatus.textContent = `тема "${slotData.name || `#${slotIndex + 1}`}" применена!`;
+          themeIoStatus.textContent = `${slotTitle} ${i18n[currentLang].theme_applied}`;
           setTimeout(() => { themeIoStatus.textContent = ''; }, 2500);
         });
 
@@ -277,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
           e.stopPropagation();
           const str = encodeThemeToString(slotData.config);
           navigator.clipboard.writeText(str).then(() => {
-            themeIoStatus.textContent = `код слота #${slotIndex + 1} скопирован в буфер!`;
+            themeIoStatus.textContent = `${i18n[currentLang].slot_prefix}${slotIndex + 1} ${i18n[currentLang].slot_code_copied}`;
             setTimeout(() => { themeIoStatus.textContent = ''; }, 2500);
           }).catch(() => {
             themeIoStatus.textContent = str;
@@ -290,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
           themeSlots.splice(slotIndex, 1);
           saveThemeSlots();
           renderSlots();
-          themeIoStatus.textContent = `слот #${slotIndex + 1} удален`;
+          themeIoStatus.textContent = `${i18n[currentLang].slot_prefix}${slotIndex + 1} ${i18n[currentLang].slot_deleted}`;
           setTimeout(() => { themeIoStatus.textContent = ''; }, 2000);
         });
 
@@ -299,18 +546,18 @@ document.addEventListener('DOMContentLoaded', () => {
         slotItem.classList.add('is-create');
         slotItem.innerHTML = `
           <div class="slot-left">
-            <span class="slot-name">+ создать новую</span>
+            <span class="slot-name">${i18n[currentLang].create_new}</span>
           </div>
         `;
         slotItem.addEventListener('click', () => {
-          const newSlotName = `тема #${totalSlots + 1}`;
+          const newSlotName = `${i18n[currentLang].slot_theme_default_name}${totalSlots + 1}`;
           themeSlots.push({
             name: newSlotName,
             config: Object.assign({}, customThemeConfig)
           });
           saveThemeSlots();
           renderSlots();
-          themeIoStatus.textContent = `создан ${newSlotName} с текущими цветами!`;
+          themeIoStatus.textContent = i18n[currentLang].slot_created;
           setTimeout(() => { themeIoStatus.textContent = ''; }, 2500);
         });
 
@@ -319,7 +566,7 @@ document.addEventListener('DOMContentLoaded', () => {
         slotItem.classList.add('is-empty');
         slotItem.innerHTML = `
           <div class="slot-left">
-            <span class="slot-name">пустой слот</span>
+            <span class="slot-name">${i18n[currentLang].empty_slot}</span>
           </div>
         `;
       }
@@ -378,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
   exportThemeBtn.addEventListener('click', () => {
     const themeString = encodeThemeToString(customThemeConfig);
     navigator.clipboard.writeText(themeString).then(() => {
-      themeIoStatus.textContent = 'скопировано в буфер обмена!';
+      themeIoStatus.textContent = i18n[currentLang].copied_to_clipboard;
       setTimeout(() => { themeIoStatus.textContent = ''; }, 3000);
     }).catch(() => {
       themeIoStatus.textContent = themeString;
@@ -391,13 +638,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const text = await navigator.clipboard.readText();
       const match = text.trim().match(/\[ETHERTHEME:([a-fA-F0-9-]+):ENDTHEME\]/);
       if (!match) {
-        themeIoStatus.textContent = 'ошибка: некорректная строка темы';
+        themeIoStatus.textContent = i18n[currentLang].err_invalid_theme;
         return;
       }
 
       const parts = match[1].split('-');
       if (parts.length < 8) {
-        themeIoStatus.textContent = 'ошибка: неполные параметры темы';
+        themeIoStatus.textContent = i18n[currentLang].err_incomplete_theme;
         return;
       }
 
@@ -418,10 +665,10 @@ document.addEventListener('DOMContentLoaded', () => {
       applyTheme('custom', true);
       currentThemeIdx = themes.indexOf('custom');
 
-      themeIoStatus.textContent = 'тема успешно импортирована!';
+      themeIoStatus.textContent = i18n[currentLang].theme_imported;
       setTimeout(() => { themeIoStatus.textContent = ''; }, 3000);
     } catch (err) {
-      themeIoStatus.textContent = 'разрешите доступ к буферу обмена для вставки';
+      themeIoStatus.textContent = i18n[currentLang].import_clipboard_error;
     }
   });
 
@@ -638,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setMetricValue(ulValText, '- - -', true);
     setMetricValue(pingValText, '- - -', true);
     gauge.reset();
-    statusBar.textContent = 'готов к запуску';
+    statusBar.textContent = i18n[currentLang].status_ready;
   }
 
   resetUI();
@@ -646,7 +893,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 9. СВЯЗЫВАНИЕ СОБЫТИЙ ДВИЖКА (ENGINE) И UI
   engine.on('start', () => {
     startBtn.classList.add('running');
-    statusBar.textContent = 'запуск тестирования сети...';
+    statusBar.textContent = i18n[currentLang].status_starting;
   });
 
   engine.on('statusMessage', (msg) => {
@@ -657,27 +904,30 @@ document.addEventListener('DOMContentLoaded', () => {
     gauge.setPhase(phase);
 
     if (phase === 'ping') {
-      statusBar.textContent = 'замер задержки и джиттера (latency & jitter)...';
+      statusBar.textContent = i18n[currentLang].status_ping;
     } else if (phase === 'download') {
-      statusBar.textContent = 'тестирование входящего канала (download)...';
+      statusBar.textContent = i18n[currentLang].status_dl;
     } else if (phase === 'upload') {
-      statusBar.textContent = 'тестирование исходящего канала (upload)...';
+      statusBar.textContent = i18n[currentLang].status_ul;
     } else if (phase === 'completed') {
       startBtn.classList.remove('running');
       gaugeContainer.classList.remove('testing');
-      statusBar.textContent = 'тестирование успешно завершено';
+      statusBar.textContent = i18n[currentLang].status_complete;
       
       sysInfo.setLastSpeeds(engine.state.download.peakMbps, engine.state.upload.peakMbps);
     } else if (phase === 'idle' || phase === 'error') {
       startBtn.classList.remove('running');
       gaugeContainer.classList.remove('testing');
-      if (phase === 'error') statusBar.textContent = 'ошибка во время замера';
+      if (phase === 'error') statusBar.textContent = i18n[currentLang].status_error;
     }
   });
 
   engine.on('pingUpdate', (pingData) => {
     setMetricValue(pingValText, pingData.current);
-    statusBar.textContent = `пинг: ${pingData.avg} мс | джиттер: ${pingData.jitter} мс`;
+    const msUnit = i18n[currentLang].unit_ms;
+    const pingLabel = (currentLang === 'ru') ? 'пинг' : 'ping';
+    const jitterLabel = (currentLang === 'ru') ? 'джиттер' : 'jitter';
+    statusBar.textContent = `${pingLabel}: ${pingData.avg} ${msUnit} | ${jitterLabel}: ${pingData.jitter} ${msUnit}`;
   });
 
   engine.on('downloadProgress', (dlData) => {
